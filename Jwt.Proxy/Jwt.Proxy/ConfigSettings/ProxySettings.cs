@@ -19,6 +19,8 @@ namespace Jwt.Proxy.ConfigSettings
     {
         public string Key { get; set; }
         public string Value { get; set; }
+
+        public RequiredKeyType Type { get; set; }
     }
 
     public enum ProxyMode
@@ -26,4 +28,11 @@ namespace Jwt.Proxy.ConfigSettings
         Redirect,
         Http403
     }
+
+    public enum RequiredKeyType
+    {
+        LiteralValue,
+        FromQueryString
+    }
+
 }

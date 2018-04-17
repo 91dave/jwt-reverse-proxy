@@ -47,9 +47,10 @@ namespace Jwt.Proxy.Services
 
                 return raw;
             }
+
             var cookieName = _settings.Cookie;
 
-            if (request.Cookies.ContainsKey(cookieName) && !String.IsNullOrWhiteSpace(request.Cookies[cookieName]))
+            if (!String.IsNullOrWhiteSpace(cookieName) && request.Cookies.ContainsKey(cookieName) && !String.IsNullOrWhiteSpace(request.Cookies[cookieName]))
             {
                 raw = request.Cookies[cookieName];
                 

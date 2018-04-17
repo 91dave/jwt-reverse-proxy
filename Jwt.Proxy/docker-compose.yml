@@ -1,0 +1,20 @@
+htr-searching-service:
+  image: htr-searching
+
+
+jwt-proxy:
+  image: jwt-proxy
+  ports:
+    - 6001:6001
+  links:
+    - htr-searching-service:backend
+  environment:
+    - ASPNETCORE_URLS=http://*:6001
+    - ProxySettings:Mode=Http403
+    - ProxySettings:BackendHost=backend
+    - ProxySettings:BackendPort=8080
+    - ProxySettings:BackendScheme=http
+    - ProxySettings:UrlFormat=/api/search/document
+    - ProxySettings:RequiredKeys:0:Key=clientKey
+    - ProxySettings:RequiredKeys:0:Value=clientKey
+    - ProxySettings:RequiredKeys:0:Type=FromQueryString

@@ -33,11 +33,13 @@ namespace Jwt.Proxy.Services
                 return false;
             }
 
-            if (_settings.RequiredKeys?.Any() ?? false)
+            if (_settings.RequiredKeys?.Where(r => r.Type == RequiredKeyType.LiteralValue)?.Any() ?? false)
             {
-                foreach (var rk in _settings.RequiredKeys)
+                foreach (var requiredKey in _settings.RequiredKeys.Where(r => r.Type == RequiredKeyType.LiteralValue))
                 {
-                    if (TokenHasKeyValue(token, rk.Key, rk.Value))
+                    Console.WriteLine($"Checking that token has {requiredKey.Key} == {requiredKey.Value}");
+
+                    if (TokenHasKeyValue(token, requiredKey.Key, requiredKey.Value))
                     {
                         return true;
                     }
@@ -64,12 +66,13 @@ namespace Jwt.Proxy.Services
             // Check request matches URL format
             Console.WriteLine($"Checking Path '{context.Request.Path}' against '{_settings.UrlFormat}'");
 
-            Regex regex = new Regex(_settings.UrlFormat);
+            var urlFormatExpression = _settings.UrlFormat.Replace("{", "(?<").Replace("}", ">.+)").Replace("/", "\\/");
+            Regex regex = new Regex(urlFormatExpression);
             var match = regex.Match(context.Request.Path);
 
             if (match.Success)
             {
-                foreach (Group group in match.Groups)
+                foreach (Group group in match.Groups.Skip(1))
                 {
                     Console.WriteLine($"Checking that token.{group.Name} == {group.Value}");
 
@@ -86,6 +89,23 @@ namespace Jwt.Proxy.Services
             else
             {
                 Console.WriteLine("Path does not match, allowing request through");
+            }
+
+            // Request has specific querystring parameters that match
+            if (_settings.RequiredKeys?.Where(r => r.Type == RequiredKeyType.FromQueryString)?.Any() ?? false)
+            {
+                foreach (var requiredKey in _settings.RequiredKeys.Where(r => r.Type == RequiredKeyType.FromQueryString))
+                {
+                    if (context.Request.Query.ContainsKey(requiredKey.Value))
+                    {
+                        Console.WriteLine($"Checking that token has {requiredKey.Key} == query[{requiredKey.Value}]");
+
+                        if (!TokenHasKeyValue(token, requiredKey.Key, context.Request.Query[requiredKey.Value]))
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
 
             // If request does not match OR no key/value checks failed - allow
